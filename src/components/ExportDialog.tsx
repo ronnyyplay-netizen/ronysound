@@ -137,7 +137,7 @@ async function audioBufferToMp3(buffer: AudioBuffer): Promise<Blob> {
     const leftChunk = leftInt.subarray(i, i + sampleBlockSize);
     const rightChunk = rightInt.subarray(i, i + sampleBlockSize);
     const mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
-    if (mp3buf.length > 0) mp3Data.push(new Int8Array(mp3buf));
+    if (mp3buf.length > 0) mp3Data.push(new Uint8Array(mp3buf));
   }
   
   const end = mp3encoder.flush();
