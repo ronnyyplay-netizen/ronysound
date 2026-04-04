@@ -39,7 +39,7 @@ const TransportControls = ({
   const totalTime = isRecording ? recordingTime : (currentTrackDuration ?? 0);
 
   return (
-    <div className="border-b border-border bg-card px-5 py-3">
+    <div className="flex-1 py-2">
       <div className="flex items-center justify-between">
         {/* Timecode */}
         <div className="font-mono text-2xl font-semibold tracking-wider text-foreground tabular-nums min-w-[160px]">
