@@ -141,7 +141,7 @@ async function audioBufferToMp3(buffer: AudioBuffer): Promise<Blob> {
   }
   
   const end = mp3encoder.flush();
-  if (end.length > 0) mp3Data.push(new Uint8Array(end));
+  if (end.length > 0) mp3Data.push(new Uint8Array(end).buffer as ArrayBuffer);
   
   return new Blob(mp3Data, { type: 'audio/mp3' });
 }
