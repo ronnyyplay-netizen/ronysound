@@ -1,0 +1,116 @@
+import { Play, Trash2, Download, Edit2, Check } from 'lucide-react';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import type { AudioTrack } from '@/hooks/useAudioRecorder';
+
+interface TrackListProps {
+  tracks: AudioTrack[];
+  currentTrackIndex: number | null;
+  isPlaying: boolean;
+  onPlay: (index: number) => void;
+  onDelete: (id: string) => void;
+  onRename: (id: string, name: string) => void;
+  onDownload: (id: string) => void;
+  onSelect: (index: number) => void;
+}
+
+function formatDuration(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+const TrackList = ({ tracks, currentTrackIndex, isPlaying, onPlay, onDelete, onRename, onDownload, onSelect }: TrackListProps) => {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
+
+  const startEdit = (track: AudioTrack) => {
+    setEditingId(track.id);
+    setEditName(track.name);
+  };
+
+  const confirmEdit = (id: string) => {
+    if (editName.trim()) onRename(id, editName.trim());
+    setEditingId(null);
+  };
+
+  return (
+    <div className="h-48 border-t border-border bg-card overflow-hidden flex flex-col">
+      <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+        <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+          Faixas Gravadas
+        </h2>
+        <span className="text-xs text-muted-foreground font-mono">{tracks.length} faixa{tracks.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        {tracks.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
+            Nenhuma gravação ainda. Clique em gravar para começar.
+          </div>
+        ) : (
+          <AnimatePresence>
+            {tracks.map((track, index) => (
+              <motion.div
+                key={track.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                onClick={() => onSelect(index)}
+                className={`flex items-center gap-3 px-4 py-2 cursor-pointer transition-colors border-b border-border/50 ${
+                  currentTrackIndex === index
+                    ? 'bg-primary/10 border-l-2 border-l-primary'
+                    : 'hover:bg-secondary/50'
+                }`}
+              >
+                <button
+                  onClick={(e) => { e.stopPropagation(); onPlay(index); }}
+                  className="w-7 h-7 rounded-md bg-primary/20 flex items-center justify-center text-primary hover:bg-primary/30 transition-colors flex-shrink-0"
+                >
+                  <Play className="w-3 h-3 ml-0.5" />
+                </button>
+
+                <div className="flex-1 min-w-0">
+                  {editingId === track.id ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && confirmEdit(track.id)}
+                        className="bg-secondary border border-border rounded px-2 py-0.5 text-sm text-foreground outline-none focus:border-primary w-full"
+                        autoFocus
+                      />
+                      <button onClick={() => confirmEdit(track.id)} className="text-primary">
+                        <Check className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-medium text-foreground truncate block">{track.name}</span>
+                  )}
+                </div>
+
+                <span className="text-xs font-mono text-muted-foreground tabular-nums flex-shrink-0">
+                  {formatDuration(track.duration)}
+                </span>
+
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={(e) => { e.stopPropagation(); startEdit(track); }} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onDownload(track.id); }} className="p-1 text-muted-foreground hover:text-primary transition-colors">
+                    <Download className="w-3 h-3" />
+                  </button>
+                  <button onClick={(e) => { e.stopPropagation(); onDelete(track.id); }} className="p-1 text-muted-foreground hover:text-recording transition-colors">
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default TrackList;
