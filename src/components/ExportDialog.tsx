@@ -123,7 +123,7 @@ async function audioBufferToMp3(buffer: AudioBuffer): Promise<Blob> {
   const right = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : left;
   
   const sampleBlockSize = 1152;
-  const mp3Data: Uint8Array[] = [];
+  const mp3Data: ArrayBuffer[] = [];
   
   const leftInt = new Int16Array(left.length);
   const rightInt = new Int16Array(right.length);
