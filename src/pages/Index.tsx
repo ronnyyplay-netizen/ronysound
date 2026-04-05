@@ -26,6 +26,7 @@ const Index = () => {
     deleteTrack,
     renameTrack,
     downloadTrack,
+    importAudioFile,
     setCurrentTrackIndex,
   } = useAudioRecorder();
 
