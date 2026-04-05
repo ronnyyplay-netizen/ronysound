@@ -6,11 +6,9 @@ import InputMeter from '@/components/InputMeter';
 import TrackList from '@/components/TrackList';
 import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
-import MultitrackTimeline from '@/components/MultitrackTimeline';
 import StemSeparator from '@/components/StemSeparator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { useMultitrackPlayer } from '@/hooks/useMultitrackPlayer';
 
 const Index = () => {
   const {
@@ -37,17 +35,9 @@ const Index = () => {
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
 
-  const multitrack = useMultitrackPlayer();
-
   const handleEQChange = useCallback((trackId: string, eq: TrackEQSettings) => {
     setTrackEQs(prev => ({ ...prev, [trackId]: eq }));
-    // Update real-time EQ if playing in timeline
-    multitrack.applyEQToNodes(trackId, eq);
-  }, [multitrack]);
-
-  const handlePlayTimeline = useCallback(() => {
-    multitrack.playTimeline(tracks, trackEQs, multitrack.timelinePosition);
-  }, [multitrack, tracks, trackEQs]);
+  }, []);
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
@@ -83,23 +73,6 @@ const Index = () => {
         />
         <InputMeter level={inputLevel} isRecording={isRecording} />
       </div>
-      <MultitrackTimeline
-        tracks={tracks}
-        timelineTracks={multitrack.timelineTracks}
-        trackEQs={trackEQs}
-        isPlaying={multitrack.isTimelinePlaying}
-        position={multitrack.timelinePosition}
-        duration={multitrack.timelineDuration}
-        onPlay={handlePlayTimeline}
-        onStop={multitrack.stopTimeline}
-        onSeek={multitrack.seekTimeline}
-        onAddTrack={multitrack.addToTimeline}
-        onRemoveTrack={multitrack.removeFromTimeline}
-        onToggleMute={multitrack.toggleMute}
-        onToggleSolo={multitrack.toggleSolo}
-        onUpdateTrack={multitrack.updateTimelineTrack}
-        onEQChange={handleEQChange}
-      />
       <div className="h-72 border-t border-border bg-card overflow-hidden flex flex-col">
         <Tabs defaultValue="tracks" className="flex flex-col h-full">
           <TabsList className="mx-4 mt-2 w-fit h-8">
