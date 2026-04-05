@@ -32,6 +32,7 @@ const Index = () => {
     downloadTrack,
     importAudioFile,
     setCurrentTrackIndex,
+    addTrack,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
