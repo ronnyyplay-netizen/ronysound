@@ -27,7 +27,8 @@ const EQSlider = forwardRef<HTMLDivElement, {
       {value > 0 ? '+' : ''}{value.toFixed(1)} {unit}
     </span>
   </div>
-);
+));
+EQSlider.displayName = 'EQSlider';
 
 const TrackEQ = ({ trackId, eq, onChange }: TrackEQProps) => {
   const [expanded, setExpanded] = useState(false);
