@@ -208,6 +208,35 @@ export function useAudioRecorder() {
     a.click();
   }, [tracks]);
 
+  const importAudioFile = useCallback(async (file: File) => {
+    try {
+      const blob = new Blob([await file.arrayBuffer()], { type: file.type });
+      const url = URL.createObjectURL(blob);
+      const waveformData = await generateWaveformData(blob);
+
+      const audio = new Audio(url);
+      await new Promise<void>((resolve, reject) => {
+        audio.onloadedmetadata = () => resolve();
+        audio.onerror = () => reject(new Error('Formato não suportado'));
+      });
+
+      const name = file.name.replace(/\.[^/.]+$/, '');
+      const newTrack: AudioTrack = {
+        id: crypto.randomUUID(),
+        name,
+        blob,
+        url,
+        duration: audio.duration,
+        createdAt: new Date(),
+        waveformData,
+      };
+      setTracks(prev => [...prev, newTrack]);
+      setCurrentTrackIndex(tracks.length);
+    } catch (err) {
+      console.error('Erro ao importar arquivo:', err);
+    }
+  }, [tracks.length, generateWaveformData]);
+
   return {
     isRecording,
     isPaused,
@@ -226,6 +255,7 @@ export function useAudioRecorder() {
     deleteTrack,
     renameTrack,
     downloadTrack,
+    importAudioFile,
     setCurrentTrackIndex,
   };
 }
