@@ -8,9 +8,11 @@ interface TrackEQProps {
   onChange: (trackId: string, eq: { bass: number; mid: number; treble: number; volume: number }) => void;
 }
 
-const EQSlider = ({ label, value, onChange, min = -12, max = 12, unit = 'dB' }: {
+import { forwardRef } from 'react';
+
+const EQSlider = forwardRef<HTMLDivElement, {
   label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; unit?: string;
-}) => (
+}>(({ label, value, onChange, min = -12, max = 12, unit = 'dB' }, ref) => (
   <div className="flex items-center gap-3">
     <span className="text-xs text-muted-foreground w-14 text-right font-mono">{label}</span>
     <Slider
@@ -25,7 +27,8 @@ const EQSlider = ({ label, value, onChange, min = -12, max = 12, unit = 'dB' }: 
       {value > 0 ? '+' : ''}{value.toFixed(1)} {unit}
     </span>
   </div>
-);
+));
+EQSlider.displayName = 'EQSlider';
 
 const TrackEQ = ({ trackId, eq, onChange }: TrackEQProps) => {
   const [expanded, setExpanded] = useState(false);
