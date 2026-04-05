@@ -255,6 +255,7 @@ export function useAudioRecorder() {
     deleteTrack,
     renameTrack,
     downloadTrack,
+    importAudioFile,
     setCurrentTrackIndex,
   };
 }
