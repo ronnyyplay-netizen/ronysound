@@ -44,7 +44,7 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Header />
+      <Header onImport={importAudioFile} />
       <div className="border-b border-border bg-card px-5 py-1 flex items-center justify-between">
         <TransportControls
           isRecording={isRecording}
