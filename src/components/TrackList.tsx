@@ -47,7 +47,7 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, onPlay, onD
   const defaultEQ: TrackEQSettings = { bass: 0, mid: 0, treble: 0, volume: 0 };
 
   return (
-    <div className="h-64 border-t border-border bg-card overflow-hidden flex flex-col">
+    <div className="flex-1 overflow-hidden flex flex-col">
       <div className="px-4 py-2 border-b border-border flex items-center justify-between">
         <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Faixas Gravadas

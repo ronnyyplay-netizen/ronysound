@@ -7,6 +7,8 @@ import TrackList from '@/components/TrackList';
 import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
 import MultitrackTimeline from '@/components/MultitrackTimeline';
+import StemSeparator from '@/components/StemSeparator';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useMultitrackPlayer } from '@/hooks/useMultitrackPlayer';
 
@@ -30,6 +32,7 @@ const Index = () => {
     downloadTrack,
     importAudioFile,
     setCurrentTrackIndex,
+    addTrack,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
@@ -97,18 +100,34 @@ const Index = () => {
         onUpdateTrack={multitrack.updateTimelineTrack}
         onEQChange={handleEQChange}
       />
-      <TrackList
-        tracks={tracks}
-        currentTrackIndex={currentTrackIndex}
-        isPlaying={isPlaying}
-        trackEQs={trackEQs}
-        onPlay={playTrack}
-        onDelete={deleteTrack}
-        onRename={renameTrack}
-        onDownload={downloadTrack}
-        onSelect={setCurrentTrackIndex}
-        onEQChange={handleEQChange}
-      />
+      <div className="h-72 border-t border-border bg-card overflow-hidden flex flex-col">
+        <Tabs defaultValue="tracks" className="flex flex-col h-full">
+          <TabsList className="mx-4 mt-2 w-fit h-8">
+            <TabsTrigger value="tracks" className="text-xs px-3 py-1">Faixas</TabsTrigger>
+            <TabsTrigger value="stems" className="text-xs px-3 py-1">🎛️ Separar Stems</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tracks" className="flex-1 overflow-hidden m-0">
+            <TrackList
+              tracks={tracks}
+              currentTrackIndex={currentTrackIndex}
+              isPlaying={isPlaying}
+              trackEQs={trackEQs}
+              onPlay={playTrack}
+              onDelete={deleteTrack}
+              onRename={renameTrack}
+              onDownload={downloadTrack}
+              onSelect={setCurrentTrackIndex}
+              onEQChange={handleEQChange}
+            />
+          </TabsContent>
+          <TabsContent value="stems" className="flex-1 overflow-y-auto m-0">
+            <StemSeparator
+              track={currentTrack}
+              onAddStemAsTrack={addTrack}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 };

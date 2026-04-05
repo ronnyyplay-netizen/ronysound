@@ -237,6 +237,11 @@ export function useAudioRecorder() {
     }
   }, [tracks.length, generateWaveformData]);
 
+  const addTrack = useCallback((track: AudioTrack) => {
+    setTracks(prev => [...prev, track]);
+    setCurrentTrackIndex(tracks.length);
+  }, [tracks.length]);
+
   return {
     isRecording,
     isPaused,
@@ -257,5 +262,6 @@ export function useAudioRecorder() {
     downloadTrack,
     importAudioFile,
     setCurrentTrackIndex,
+    addTrack,
   };
 }
