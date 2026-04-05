@@ -6,7 +6,9 @@ import InputMeter from '@/components/InputMeter';
 import TrackList from '@/components/TrackList';
 import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
+import MultitrackTimeline from '@/components/MultitrackTimeline';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import { useMultitrackPlayer } from '@/hooks/useMultitrackPlayer';
 
 const Index = () => {
   const {
@@ -32,9 +34,17 @@ const Index = () => {
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
 
+  const multitrack = useMultitrackPlayer();
+
   const handleEQChange = useCallback((trackId: string, eq: TrackEQSettings) => {
     setTrackEQs(prev => ({ ...prev, [trackId]: eq }));
-  }, []);
+    // Update real-time EQ if playing in timeline
+    multitrack.applyEQToNodes(trackId, eq);
+  }, [multitrack]);
+
+  const handlePlayTimeline = useCallback(() => {
+    multitrack.playTimeline(tracks, trackEQs, multitrack.timelinePosition);
+  }, [multitrack, tracks, trackEQs]);
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
@@ -61,7 +71,7 @@ const Index = () => {
         />
         <ExportDialog track={currentTrack} eq={currentEQ} />
       </div>
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         <WaveformDisplay
           waveformData={currentTrack?.waveformData ?? []}
           isRecording={isRecording}
@@ -70,6 +80,23 @@ const Index = () => {
         />
         <InputMeter level={inputLevel} isRecording={isRecording} />
       </div>
+      <MultitrackTimeline
+        tracks={tracks}
+        timelineTracks={multitrack.timelineTracks}
+        trackEQs={trackEQs}
+        isPlaying={multitrack.isTimelinePlaying}
+        position={multitrack.timelinePosition}
+        duration={multitrack.timelineDuration}
+        onPlay={handlePlayTimeline}
+        onStop={multitrack.stopTimeline}
+        onSeek={multitrack.seekTimeline}
+        onAddTrack={multitrack.addToTimeline}
+        onRemoveTrack={multitrack.removeFromTimeline}
+        onToggleMute={multitrack.toggleMute}
+        onToggleSolo={multitrack.toggleSolo}
+        onUpdateTrack={multitrack.updateTimelineTrack}
+        onEQChange={handleEQChange}
+      />
       <TrackList
         tracks={tracks}
         currentTrackIndex={currentTrackIndex}
