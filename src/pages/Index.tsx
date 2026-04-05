@@ -7,6 +7,8 @@ import TrackList from '@/components/TrackList';
 import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
 import MultitrackTimeline from '@/components/MultitrackTimeline';
+import StemSeparator from '@/components/StemSeparator';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { useMultitrackPlayer } from '@/hooks/useMultitrackPlayer';
 
