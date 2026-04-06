@@ -413,5 +413,6 @@ export function useAudioRecorder() {
     setInputSource,
     toggleMonitoring,
     setNoiseReduction,
+    updatePlaybackEQ,
   };
 }
