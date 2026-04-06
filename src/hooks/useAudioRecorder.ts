@@ -12,6 +12,13 @@ export interface AudioTrack {
 
 export type AudioInputSource = 'microphone' | 'line';
 
+export interface PlaybackEQ {
+  bass: number;
+  mid: number;
+  treble: number;
+  volume: number;
+}
+
 export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -37,6 +44,8 @@ export function useAudioRecorder() {
   const streamRef = useRef<MediaStream | null>(null);
   const monitorGainRef = useRef<GainNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const playbackCtxRef = useRef<AudioContext | null>(null);
+  const playbackEQRef = useRef<{ bass: BiquadFilterNode; mid: BiquadFilterNode; treble: BiquadFilterNode; gain: GainNode } | null>(null);
 
   const generateWaveformData = useCallback(async (blob: Blob): Promise<number[]> => {
     const arrayBuffer = await blob.arrayBuffer();
@@ -233,7 +242,7 @@ export function useAudioRecorder() {
     }
   }, [isRecording]);
 
-  const playTrack = useCallback((index?: number) => {
+  const playTrack = useCallback((index?: number, eq?: PlaybackEQ) => {
     const idx = index ?? currentTrackIndex;
     if (idx === null || !tracks[idx]) return;
     
@@ -241,12 +250,50 @@ export function useAudioRecorder() {
       audioElementRef.current.pause();
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
     }
+    if (playbackCtxRef.current) {
+      playbackCtxRef.current.close();
+      playbackCtxRef.current = null;
+      playbackEQRef.current = null;
+    }
 
     const audio = new Audio(tracks[idx].url);
+    audio.crossOrigin = 'anonymous';
     audioElementRef.current = audio;
     setCurrentTrackIndex(idx);
     setIsPlaying(true);
     setPlaybackTime(0);
+
+    // Setup Web Audio EQ chain
+    const ctx = new AudioContext();
+    playbackCtxRef.current = ctx;
+    const source = ctx.createMediaElementSource(audio);
+
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 200;
+    bassFilter.gain.value = eq?.bass ?? 0;
+
+    const midFilter = ctx.createBiquadFilter();
+    midFilter.type = 'peaking';
+    midFilter.frequency.value = 1000;
+    midFilter.Q.value = 1;
+    midFilter.gain.value = eq?.mid ?? 0;
+
+    const trebleFilter = ctx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 4000;
+    trebleFilter.gain.value = eq?.treble ?? 0;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = Math.pow(10, (eq?.volume ?? 0) / 20);
+
+    source.connect(bassFilter);
+    bassFilter.connect(midFilter);
+    midFilter.connect(trebleFilter);
+    trebleFilter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    playbackEQRef.current = { bass: bassFilter, mid: midFilter, treble: trebleFilter, gain: gainNode };
 
     playbackTimerRef.current = window.setInterval(() => {
       setPlaybackTime(audio.currentTime);
@@ -259,6 +306,15 @@ export function useAudioRecorder() {
 
     audio.play();
   }, [currentTrackIndex, tracks]);
+
+  const updatePlaybackEQ = useCallback((eq: PlaybackEQ) => {
+    if (!playbackEQRef.current) return;
+    const { bass, mid, treble, gain } = playbackEQRef.current;
+    bass.gain.value = eq.bass;
+    mid.gain.value = eq.mid;
+    treble.gain.value = eq.treble;
+    gain.gain.value = Math.pow(10, eq.volume / 20);
+  }, []);
 
   const pausePlayback = useCallback(() => {
     if (audioElementRef.current) {
@@ -357,5 +413,6 @@ export function useAudioRecorder() {
     setInputSource,
     toggleMonitoring,
     setNoiseReduction,
+    updatePlaybackEQ,
   };
 }

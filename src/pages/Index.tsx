@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Header from '@/components/Header';
 import TransportControls from '@/components/TransportControls';
 import WaveformDisplay from '@/components/WaveformDisplay';
@@ -6,6 +6,7 @@ import InputMeter from '@/components/InputMeter';
 import TrackList from '@/components/TrackList';
 import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
+import MixExportDialog from '@/components/MixExportDialog';
 import StemSeparator from '@/components/StemSeparator';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
@@ -37,6 +38,7 @@ const Index = () => {
     setInputSource,
     toggleMonitoring,
     setNoiseReduction,
+    updatePlaybackEQ,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
@@ -45,8 +47,24 @@ const Index = () => {
     setTrackEQs(prev => ({ ...prev, [trackId]: eq }));
   }, []);
 
+  // Update playback EQ in real-time when EQ changes
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
+
+  useEffect(() => {
+    if (isPlaying && currentTrack) {
+      updatePlaybackEQ(currentEQ);
+    }
+  }, [currentEQ, isPlaying, currentTrack, updatePlaybackEQ]);
+
+  const handlePlay = useCallback((index?: number) => {
+    const idx = index ?? currentTrackIndex;
+    if (idx === null || !tracks[idx]) return;
+    const track = tracks[idx];
+    const eq = trackEQs[track.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 };
+    playTrack(idx, eq);
+  }, [currentTrackIndex, tracks, trackEQs, playTrack]);
+
   const playbackProgress = currentTrack && currentTrack.duration > 0
     ? playbackTime / currentTrack.duration
     : 0;
@@ -73,11 +91,14 @@ const Index = () => {
           hasTrack={tracks.length > 0}
           onRecord={startRecording}
           onStop={stopRecording}
-          onPlay={() => playTrack()}
+          onPlay={() => handlePlay()}
           onPause={pausePlayback}
           onStopPlayback={stopPlayback}
         />
-        <ExportDialog track={currentTrack} eq={currentEQ} />
+        <div className="flex items-center gap-2">
+          <ExportDialog track={currentTrack} eq={currentEQ} />
+          <MixExportDialog tracks={tracks} trackEQs={trackEQs} />
+        </div>
       </div>
       <div className="flex-1 flex overflow-hidden min-h-0">
         <WaveformDisplay
@@ -100,7 +121,7 @@ const Index = () => {
               currentTrackIndex={currentTrackIndex}
               isPlaying={isPlaying}
               trackEQs={trackEQs}
-              onPlay={playTrack}
+              onPlay={handlePlay}
               onDelete={deleteTrack}
               onRename={renameTrack}
               onDownload={downloadTrack}
