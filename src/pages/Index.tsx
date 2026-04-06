@@ -20,6 +20,9 @@ const Index = () => {
     playbackTime,
     analyserData,
     inputLevel,
+    inputSource,
+    isMonitoring,
+    noiseReduction,
     startRecording,
     stopRecording,
     playTrack,
@@ -31,6 +34,9 @@ const Index = () => {
     importAudioFile,
     setCurrentTrackIndex,
     addTrack,
+    setInputSource,
+    toggleMonitoring,
+    setNoiseReduction,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});

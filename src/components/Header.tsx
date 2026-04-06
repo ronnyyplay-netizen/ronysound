@@ -1,11 +1,29 @@
-import { Mic, Music, Upload } from 'lucide-react';
+import { Music, Upload } from 'lucide-react';
 import { useRef } from 'react';
+import RecordingSettings from './RecordingSettings';
+import type { AudioInputSource } from '@/hooks/useAudioRecorder';
 
 interface HeaderProps {
   onImport?: (file: File) => void;
+  inputSource: AudioInputSource;
+  isMonitoring: boolean;
+  noiseReduction: boolean;
+  isRecording: boolean;
+  onInputSourceChange: (source: AudioInputSource) => void;
+  onMonitoringChange: (enabled: boolean) => void;
+  onNoiseReductionChange: (enabled: boolean) => void;
 }
 
-const Header = ({ onImport }: HeaderProps) => {
+const Header = ({
+  onImport,
+  inputSource,
+  isMonitoring,
+  noiseReduction,
+  isRecording,
+  onInputSourceChange,
+  onMonitoringChange,
+  onNoiseReductionChange,
+}: HeaderProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,12 +43,22 @@ const Header = ({ onImport }: HeaderProps) => {
         </h1>
       </div>
       <div className="flex items-center gap-3">
+        <RecordingSettings
+          inputSource={inputSource}
+          isMonitoring={isMonitoring}
+          noiseReduction={noiseReduction}
+          isRecording={isRecording}
+          onInputSourceChange={onInputSourceChange}
+          onMonitoringChange={onMonitoringChange}
+          onNoiseReductionChange={onNoiseReductionChange}
+        />
+        <div className="w-px h-6 bg-border" />
         <button
           onClick={() => fileInputRef.current?.click()}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-colors"
         >
           <Upload className="w-3.5 h-3.5" />
-          Importar Áudio
+          Importar
         </button>
         <input
           ref={fileInputRef}
@@ -39,10 +67,6 @@ const Header = ({ onImport }: HeaderProps) => {
           className="hidden"
           onChange={handleFileChange}
         />
-        <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
-          <Mic className="w-3.5 h-3.5" />
-          <span>48kHz / 24bit</span>
-        </div>
       </div>
     </header>
   );
