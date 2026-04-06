@@ -44,6 +44,8 @@ export function useAudioRecorder() {
   const streamRef = useRef<MediaStream | null>(null);
   const monitorGainRef = useRef<GainNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const playbackCtxRef = useRef<AudioContext | null>(null);
+  const playbackEQRef = useRef<{ bass: BiquadFilterNode; mid: BiquadFilterNode; treble: BiquadFilterNode; gain: GainNode } | null>(null);
 
   const generateWaveformData = useCallback(async (blob: Blob): Promise<number[]> => {
     const arrayBuffer = await blob.arrayBuffer();
