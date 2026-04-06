@@ -242,7 +242,7 @@ export function useAudioRecorder() {
     }
   }, [isRecording]);
 
-  const playTrack = useCallback((index?: number) => {
+  const playTrack = useCallback((index?: number, eq?: PlaybackEQ) => {
     const idx = index ?? currentTrackIndex;
     if (idx === null || !tracks[idx]) return;
     
@@ -250,12 +250,50 @@ export function useAudioRecorder() {
       audioElementRef.current.pause();
       if (playbackTimerRef.current) clearInterval(playbackTimerRef.current);
     }
+    if (playbackCtxRef.current) {
+      playbackCtxRef.current.close();
+      playbackCtxRef.current = null;
+      playbackEQRef.current = null;
+    }
 
     const audio = new Audio(tracks[idx].url);
+    audio.crossOrigin = 'anonymous';
     audioElementRef.current = audio;
     setCurrentTrackIndex(idx);
     setIsPlaying(true);
     setPlaybackTime(0);
+
+    // Setup Web Audio EQ chain
+    const ctx = new AudioContext();
+    playbackCtxRef.current = ctx;
+    const source = ctx.createMediaElementSource(audio);
+
+    const bassFilter = ctx.createBiquadFilter();
+    bassFilter.type = 'lowshelf';
+    bassFilter.frequency.value = 200;
+    bassFilter.gain.value = eq?.bass ?? 0;
+
+    const midFilter = ctx.createBiquadFilter();
+    midFilter.type = 'peaking';
+    midFilter.frequency.value = 1000;
+    midFilter.Q.value = 1;
+    midFilter.gain.value = eq?.mid ?? 0;
+
+    const trebleFilter = ctx.createBiquadFilter();
+    trebleFilter.type = 'highshelf';
+    trebleFilter.frequency.value = 4000;
+    trebleFilter.gain.value = eq?.treble ?? 0;
+
+    const gainNode = ctx.createGain();
+    gainNode.gain.value = Math.pow(10, (eq?.volume ?? 0) / 20);
+
+    source.connect(bassFilter);
+    bassFilter.connect(midFilter);
+    midFilter.connect(trebleFilter);
+    trebleFilter.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    playbackEQRef.current = { bass: bassFilter, mid: midFilter, treble: trebleFilter, gain: gainNode };
 
     playbackTimerRef.current = window.setInterval(() => {
       setPlaybackTime(audio.currentTime);
@@ -268,6 +306,15 @@ export function useAudioRecorder() {
 
     audio.play();
   }, [currentTrackIndex, tracks]);
+
+  const updatePlaybackEQ = useCallback((eq: PlaybackEQ) => {
+    if (!playbackEQRef.current) return;
+    const { bass, mid, treble, gain } = playbackEQRef.current;
+    bass.gain.value = eq.bass;
+    mid.gain.value = eq.mid;
+    treble.gain.value = eq.treble;
+    gain.gain.value = Math.pow(10, eq.volume / 20);
+  }, []);
 
   const pausePlayback = useCallback(() => {
     if (audioElementRef.current) {
