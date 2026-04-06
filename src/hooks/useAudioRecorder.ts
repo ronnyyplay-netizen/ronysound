@@ -12,6 +12,13 @@ export interface AudioTrack {
 
 export type AudioInputSource = 'microphone' | 'line';
 
+export interface PlaybackEQ {
+  bass: number;
+  mid: number;
+  treble: number;
+  volume: number;
+}
+
 export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
