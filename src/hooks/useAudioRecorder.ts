@@ -10,6 +10,8 @@ export interface AudioTrack {
   waveformData: number[];
 }
 
+export type AudioInputSource = 'microphone' | 'line';
+
 export function useAudioRecorder() {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -20,6 +22,9 @@ export function useAudioRecorder() {
   const [playbackTime, setPlaybackTime] = useState(0);
   const [analyserData, setAnalyserData] = useState<number[]>(new Array(128).fill(0));
   const [inputLevel, setInputLevel] = useState(0);
+  const [inputSource, setInputSource] = useState<AudioInputSource>('microphone');
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [noiseReduction, setNoiseReduction] = useState(true);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -30,6 +35,8 @@ export function useAudioRecorder() {
   const audioElementRef = useRef<HTMLAudioElement | null>(null);
   const playbackTimerRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const monitorGainRef = useRef<GainNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
 
   const generateWaveformData = useCallback(async (blob: Blob): Promise<number[]> => {
     const arrayBuffer = await blob.arrayBuffer();
@@ -57,33 +64,108 @@ export function useAudioRecorder() {
     analyserRef.current.getByteFrequencyData(data);
     const normalized = Array.from(data).map(v => v / 255);
     setAnalyserData(normalized);
-
     const rms = Math.sqrt(normalized.reduce((sum, v) => sum + v * v, 0) / normalized.length);
     setInputLevel(rms);
-
     animFrameRef.current = requestAnimationFrame(updateAnalyser);
+  }, []);
+
+  const buildNoiseReductionChain = useCallback((ctx: AudioContext, source: MediaStreamAudioSourceNode) => {
+    // High-pass filter to remove low-frequency rumble (wind, AC, traffic)
+    const highPass = ctx.createBiquadFilter();
+    highPass.type = 'highpass';
+    highPass.frequency.value = 80;
+    highPass.Q.value = 0.7;
+
+    // Low-pass to remove very high frequency hiss
+    const lowPass = ctx.createBiquadFilter();
+    lowPass.type = 'lowpass';
+    lowPass.frequency.value = 16000;
+    lowPass.Q.value = 0.7;
+
+    // Noise gate via compressor with high threshold
+    const noiseGate = ctx.createDynamicsCompressor();
+    noiseGate.threshold.value = -50;
+    noiseGate.knee.value = 5;
+    noiseGate.ratio.value = 12;
+    noiseGate.attack.value = 0.003;
+    noiseGate.release.value = 0.1;
+
+    // Gentle compression for consistent levels
+    const compressor = ctx.createDynamicsCompressor();
+    compressor.threshold.value = -24;
+    compressor.knee.value = 10;
+    compressor.ratio.value = 3;
+    compressor.attack.value = 0.01;
+    compressor.release.value = 0.25;
+
+    // Notch filters for common interference frequencies (50/60Hz hum)
+    const notch50 = ctx.createBiquadFilter();
+    notch50.type = 'notch';
+    notch50.frequency.value = 50;
+    notch50.Q.value = 30;
+
+    const notch60 = ctx.createBiquadFilter();
+    notch60.type = 'notch';
+    notch60.frequency.value = 60;
+    notch60.Q.value = 30;
+
+    source.connect(highPass);
+    highPass.connect(notch50);
+    notch50.connect(notch60);
+    notch60.connect(lowPass);
+    lowPass.connect(noiseGate);
+    noiseGate.connect(compressor);
+
+    return compressor;
   }, []);
 
   const startRecording = useCallback(async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: { 
-          echoCancellation: false, 
-          noiseSuppression: false, 
-          autoGainControl: false 
-        } 
-      });
+      const constraints: MediaStreamConstraints = {
+        audio: {
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 2, // Stereo
+          sampleRate: 48000,
+        }
+      };
+
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
 
-      const audioContext = new AudioContext();
+      const audioContext = new AudioContext({ sampleRate: 48000 });
       const source = audioContext.createMediaStreamSource(stream);
+      sourceNodeRef.current = source;
+
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
-      source.connect(analyser);
       audioContextRef.current = audioContext;
       analyserRef.current = analyser;
 
-      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm;codecs=opus' });
+      // Build processing chain
+      let lastNode: AudioNode;
+      if (noiseReduction) {
+        lastNode = buildNoiseReductionChain(audioContext, source);
+      } else {
+        lastNode = source;
+      }
+
+      lastNode.connect(analyser);
+
+      // Create a destination for recording the processed audio
+      const recordingDest = audioContext.createMediaStreamDestination();
+      lastNode.connect(recordingDest);
+
+      // Monitor output (real-time listening)
+      const monitorGain = audioContext.createGain();
+      monitorGain.gain.value = isMonitoring ? 1 : 0;
+      lastNode.connect(monitorGain);
+      monitorGain.connect(audioContext.destination);
+      monitorGainRef.current = monitorGain;
+
+      // Record from processed stream
+      const mediaRecorder = new MediaRecorder(recordingDest.stream, { mimeType: 'audio/webm;codecs=opus' });
       chunksRef.current = [];
 
       mediaRecorder.ondataavailable = (e) => {
@@ -124,9 +206,16 @@ export function useAudioRecorder() {
 
       updateAnalyser();
     } catch (err) {
-      console.error('Erro ao acessar microfone:', err);
+      console.error('Erro ao acessar dispositivo de áudio:', err);
     }
-  }, [tracks.length, generateWaveformData, updateAnalyser]);
+  }, [tracks.length, generateWaveformData, updateAnalyser, noiseReduction, isMonitoring, buildNoiseReductionChain]);
+
+  const toggleMonitoring = useCallback((enabled: boolean) => {
+    setIsMonitoring(enabled);
+    if (monitorGainRef.current) {
+      monitorGainRef.current.gain.setValueAtTime(enabled ? 1 : 0, audioContextRef.current?.currentTime ?? 0);
+    }
+  }, []);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current && isRecording) {
@@ -135,6 +224,8 @@ export function useAudioRecorder() {
       if (timerRef.current) clearInterval(timerRef.current);
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
       audioContextRef.current?.close();
+      monitorGainRef.current = null;
+      sourceNodeRef.current = null;
       setIsRecording(false);
       setIsPaused(false);
       setAnalyserData(new Array(128).fill(0));
@@ -188,10 +279,7 @@ export function useAudioRecorder() {
   }, []);
 
   const deleteTrack = useCallback((id: string) => {
-    setTracks(prev => {
-      const filtered = prev.filter(t => t.id !== id);
-      return filtered;
-    });
+    setTracks(prev => prev.filter(t => t.id !== id));
     setCurrentTrackIndex(null);
   }, []);
 
@@ -252,6 +340,9 @@ export function useAudioRecorder() {
     playbackTime,
     analyserData,
     inputLevel,
+    inputSource,
+    isMonitoring,
+    noiseReduction,
     startRecording,
     stopRecording,
     playTrack,
@@ -263,5 +354,8 @@ export function useAudioRecorder() {
     importAudioFile,
     setCurrentTrackIndex,
     addTrack,
+    setInputSource,
+    toggleMonitoring,
+    setNoiseReduction,
   };
 }

@@ -20,6 +20,9 @@ const Index = () => {
     playbackTime,
     analyserData,
     inputLevel,
+    inputSource,
+    isMonitoring,
+    noiseReduction,
     startRecording,
     stopRecording,
     playTrack,
@@ -31,6 +34,9 @@ const Index = () => {
     importAudioFile,
     setCurrentTrackIndex,
     addTrack,
+    setInputSource,
+    toggleMonitoring,
+    setNoiseReduction,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
@@ -47,7 +53,16 @@ const Index = () => {
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
-      <Header onImport={importAudioFile} />
+      <Header
+        onImport={importAudioFile}
+        inputSource={inputSource}
+        isMonitoring={isMonitoring}
+        noiseReduction={noiseReduction}
+        isRecording={isRecording}
+        onInputSourceChange={setInputSource}
+        onMonitoringChange={toggleMonitoring}
+        onNoiseReductionChange={setNoiseReduction}
+      />
       <div className="border-b border-border bg-card px-5 py-1 flex items-center justify-between">
         <TransportControls
           isRecording={isRecording}
