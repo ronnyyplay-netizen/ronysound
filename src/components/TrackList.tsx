@@ -26,6 +26,11 @@ interface TrackListProps {
   onSelect: (index: number) => void;
   onEQChange: (trackId: string, eq: TrackEQSettings) => void;
   onFXChange: (trackId: string, fx: TrackFXSettings) => void;
+  onApplyPreset?: (trackId: string, preset: import('./TrackEffects').VoicePreset) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 function formatDuration(seconds: number): string {
