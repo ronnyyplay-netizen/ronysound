@@ -8,8 +8,11 @@ import type { TrackEQSettings } from '@/components/TrackList';
 import ExportDialog from '@/components/ExportDialog';
 import MixExportDialog from '@/components/MixExportDialog';
 import StemSeparator from '@/components/StemSeparator';
+import SpectrumAnalyzer from '@/components/SpectrumAnalyzer';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
+import type { TrackFXSettings } from '@/components/TrackEffects';
+import { defaultFX } from '@/components/TrackEffects';
 
 const Index = () => {
   const {
@@ -24,6 +27,7 @@ const Index = () => {
     inputSource,
     isMonitoring,
     noiseReduction,
+    playbackAnalyser,
     startRecording,
     stopRecording,
     playTrack,
@@ -39,17 +43,23 @@ const Index = () => {
     toggleMonitoring,
     setNoiseReduction,
     updatePlaybackEQ,
+    updatePlaybackFX,
   } = useAudioRecorder();
 
   const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
+  const [trackFXs, setTrackFXs] = useState<Record<string, TrackFXSettings>>({});
 
   const handleEQChange = useCallback((trackId: string, eq: TrackEQSettings) => {
     setTrackEQs(prev => ({ ...prev, [trackId]: eq }));
   }, []);
 
-  // Update playback EQ in real-time when EQ changes
+  const handleFXChange = useCallback((trackId: string, fx: TrackFXSettings) => {
+    setTrackFXs(prev => ({ ...prev, [trackId]: fx }));
+  }, []);
+
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
+  const currentFX = currentTrack ? (trackFXs[currentTrack.id] ?? defaultFX) : defaultFX;
 
   useEffect(() => {
     if (isPlaying && currentTrack) {
@@ -57,13 +67,20 @@ const Index = () => {
     }
   }, [currentEQ, isPlaying, currentTrack, updatePlaybackEQ]);
 
+  useEffect(() => {
+    if (isPlaying && currentTrack) {
+      updatePlaybackFX(currentFX);
+    }
+  }, [currentFX, isPlaying, currentTrack, updatePlaybackFX]);
+
   const handlePlay = useCallback((index?: number) => {
     const idx = index ?? currentTrackIndex;
     if (idx === null || !tracks[idx]) return;
     const track = tracks[idx];
     const eq = trackEQs[track.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 };
-    playTrack(idx, eq);
-  }, [currentTrackIndex, tracks, trackEQs, playTrack]);
+    const fx = trackFXs[track.id] ?? defaultFX;
+    playTrack(idx, eq, fx);
+  }, [currentTrackIndex, tracks, trackEQs, trackFXs, playTrack]);
 
   const playbackProgress = currentTrack && currentTrack.duration > 0
     ? playbackTime / currentTrack.duration
@@ -107,9 +124,13 @@ const Index = () => {
           analyserData={analyserData}
           playbackProgress={playbackProgress}
         />
+        <SpectrumAnalyzer
+          analyserNode={playbackAnalyser}
+          isActive={isPlaying}
+        />
         <InputMeter level={inputLevel} isRecording={isRecording} />
       </div>
-      <div className="h-72 border-t border-border bg-card overflow-hidden flex flex-col">
+      <div className="h-80 border-t border-border bg-card overflow-hidden flex flex-col">
         <Tabs defaultValue="tracks" className="flex flex-col h-full">
           <TabsList className="mx-4 mt-2 w-fit h-8">
             <TabsTrigger value="tracks" className="text-xs px-3 py-1">Faixas</TabsTrigger>
@@ -121,12 +142,14 @@ const Index = () => {
               currentTrackIndex={currentTrackIndex}
               isPlaying={isPlaying}
               trackEQs={trackEQs}
+              trackFXs={trackFXs}
               onPlay={handlePlay}
               onDelete={deleteTrack}
               onRename={renameTrack}
               onDownload={downloadTrack}
               onSelect={setCurrentTrackIndex}
               onEQChange={handleEQChange}
+              onFXChange={handleFXChange}
             />
           </TabsContent>
           <TabsContent value="stems" className="flex-1 overflow-y-auto m-0">

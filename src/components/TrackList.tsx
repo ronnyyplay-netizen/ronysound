@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AudioTrack } from '@/hooks/useAudioRecorder';
 import TrackEQ from './TrackEQ';
+import TrackEffects, { defaultFX } from './TrackEffects';
+import type { TrackFXSettings } from './TrackEffects';
 
 export interface TrackEQSettings {
   bass: number;
@@ -16,12 +18,14 @@ interface TrackListProps {
   currentTrackIndex: number | null;
   isPlaying: boolean;
   trackEQs: Record<string, TrackEQSettings>;
+  trackFXs: Record<string, TrackFXSettings>;
   onPlay: (index: number) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDownload: (id: string) => void;
   onSelect: (index: number) => void;
   onEQChange: (trackId: string, eq: TrackEQSettings) => void;
+  onFXChange: (trackId: string, fx: TrackFXSettings) => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -30,7 +34,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange }: TrackListProps) => {
+const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange }: TrackListProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
@@ -120,11 +124,18 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, onPlay, onD
                   </div>
                 </div>
                 {currentTrackIndex === index && (
-                  <TrackEQ
-                    trackId={track.id}
-                    eq={trackEQs[track.id] ?? defaultEQ}
-                    onChange={onEQChange}
-                  />
+                  <>
+                    <TrackEQ
+                      trackId={track.id}
+                      eq={trackEQs[track.id] ?? defaultEQ}
+                      onChange={onEQChange}
+                    />
+                    <TrackEffects
+                      trackId={track.id}
+                      fx={trackFXs[track.id] ?? defaultFX}
+                      onChange={onFXChange}
+                    />
+                  </>
                 )}
               </motion.div>
             ))}
