@@ -149,6 +149,7 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
                       trackId={track.id}
                       fx={trackFXs[track.id] ?? defaultFX}
                       onChange={onFXChange}
+                      onApplyPreset={onApplyPreset}
                     />
                   </>
                 )}
