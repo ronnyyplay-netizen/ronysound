@@ -61,7 +61,17 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
         <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Faixas Gravadas
         </h2>
-        <span className="text-xs text-muted-foreground font-mono">{tracks.length} faixa{tracks.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
+            <button onClick={onUndo} disabled={!canUndo} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors" title="Desfazer (EQ/FX)">
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onRedo} disabled={!canRedo} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors" title="Refazer (EQ/FX)">
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <span className="text-xs text-muted-foreground font-mono">{tracks.length} faixa{tracks.length !== 1 ? 's' : ''}</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
