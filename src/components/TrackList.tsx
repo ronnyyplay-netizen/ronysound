@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AudioTrack } from '@/hooks/useAudioRecorder';
 import TrackEQ from './TrackEQ';
-import TrackEffects from './TrackEffects';
+import TrackEffects, { defaultFX } from './TrackEffects';
 import type { TrackFXSettings } from './TrackEffects';
 
 export interface TrackEQSettings {
