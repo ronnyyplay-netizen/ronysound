@@ -39,7 +39,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange }: TrackListProps) => {
+const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange, onApplyPreset, canUndo, canRedo, onUndo, onRedo }: TrackListProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
