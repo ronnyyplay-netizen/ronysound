@@ -124,11 +124,18 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
                   </div>
                 </div>
                 {currentTrackIndex === index && (
-                  <TrackEQ
-                    trackId={track.id}
-                    eq={trackEQs[track.id] ?? defaultEQ}
-                    onChange={onEQChange}
-                  />
+                  <>
+                    <TrackEQ
+                      trackId={track.id}
+                      eq={trackEQs[track.id] ?? defaultEQ}
+                      onChange={onEQChange}
+                    />
+                    <TrackEffects
+                      trackId={track.id}
+                      fx={trackFXs[track.id] ?? defaultFX}
+                      onChange={onFXChange}
+                    />
+                  </>
                 )}
               </motion.div>
             ))}
