@@ -1,4 +1,4 @@
-import { Play, Trash2, Download, Edit2, Check } from 'lucide-react';
+import { Play, Trash2, Download, Edit2, Check, Undo2, Redo2 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AudioTrack } from '@/hooks/useAudioRecorder';
@@ -26,6 +26,11 @@ interface TrackListProps {
   onSelect: (index: number) => void;
   onEQChange: (trackId: string, eq: TrackEQSettings) => void;
   onFXChange: (trackId: string, fx: TrackFXSettings) => void;
+  onApplyPreset?: (trackId: string, preset: import('./TrackEffects').VoicePreset) => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 function formatDuration(seconds: number): string {
@@ -34,7 +39,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange }: TrackListProps) => {
+const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange, onApplyPreset, canUndo, canRedo, onUndo, onRedo }: TrackListProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
@@ -56,7 +61,17 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
         <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
           Faixas Gravadas
         </h2>
-        <span className="text-xs text-muted-foreground font-mono">{tracks.length} faixa{tracks.length !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5">
+            <button onClick={onUndo} disabled={!canUndo} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors" title="Desfazer (EQ/FX)">
+              <Undo2 className="w-3.5 h-3.5" />
+            </button>
+            <button onClick={onRedo} disabled={!canRedo} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors" title="Refazer (EQ/FX)">
+              <Redo2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <span className="text-xs text-muted-foreground font-mono">{tracks.length} faixa{tracks.length !== 1 ? 's' : ''}</span>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin">
@@ -134,6 +149,7 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
                       trackId={track.id}
                       fx={trackFXs[track.id] ?? defaultFX}
                       onChange={onFXChange}
+                      onApplyPreset={onApplyPreset}
                     />
                   </>
                 )}
