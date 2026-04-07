@@ -1,4 +1,4 @@
-import { Play, Trash2, Download, Edit2, Check } from 'lucide-react';
+import { Play, Trash2, Download, Edit2, Check, Undo2, Redo2 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { AudioTrack } from '@/hooks/useAudioRecorder';
