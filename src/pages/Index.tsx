@@ -11,8 +11,14 @@ import StemSeparator from '@/components/StemSeparator';
 import SpectrumAnalyzer from '@/components/SpectrumAnalyzer';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import type { TrackFXSettings } from '@/components/TrackEffects';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
+import type { TrackFXSettings, VoicePreset } from '@/components/TrackEffects';
 import { defaultFX } from '@/components/TrackEffects';
+
+interface MixState {
+  eqs: Record<string, TrackEQSettings>;
+  fxs: Record<string, TrackFXSettings>;
+}
 
 const Index = () => {
   const {
@@ -46,16 +52,25 @@ const Index = () => {
     updatePlaybackFX,
   } = useAudioRecorder();
 
-  const [trackEQs, setTrackEQs] = useState<Record<string, TrackEQSettings>>({});
-  const [trackFXs, setTrackFXs] = useState<Record<string, TrackFXSettings>>({});
+  const { state: mixState, set: setMixState, undo, redo, canUndo, canRedo } = useUndoRedo<MixState>({ eqs: {}, fxs: {} });
+
+  const trackEQs = mixState.eqs;
+  const trackFXs = mixState.fxs;
 
   const handleEQChange = useCallback((trackId: string, eq: TrackEQSettings) => {
-    setTrackEQs(prev => ({ ...prev, [trackId]: eq }));
-  }, []);
+    setMixState(prev => ({ ...prev, eqs: { ...prev.eqs, [trackId]: eq } }));
+  }, [setMixState]);
 
   const handleFXChange = useCallback((trackId: string, fx: TrackFXSettings) => {
-    setTrackFXs(prev => ({ ...prev, [trackId]: fx }));
-  }, []);
+    setMixState(prev => ({ ...prev, fxs: { ...prev.fxs, [trackId]: fx } }));
+  }, [setMixState]);
+
+  const handleApplyPreset = useCallback((trackId: string, preset: VoicePreset) => {
+    setMixState(prev => ({
+      eqs: { ...prev.eqs, [trackId]: preset.eq },
+      fxs: { ...prev.fxs, [trackId]: { ...defaultFX, ...preset.fx } },
+    }));
+  }, [setMixState]);
 
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
@@ -150,6 +165,11 @@ const Index = () => {
               onSelect={setCurrentTrackIndex}
               onEQChange={handleEQChange}
               onFXChange={handleFXChange}
+              onApplyPreset={handleApplyPreset}
+              canUndo={canUndo}
+              canRedo={canRedo}
+              onUndo={undo}
+              onRedo={redo}
             />
           </TabsContent>
           <TabsContent value="stems" className="flex-1 overflow-y-auto m-0">
