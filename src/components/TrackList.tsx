@@ -18,12 +18,14 @@ interface TrackListProps {
   currentTrackIndex: number | null;
   isPlaying: boolean;
   trackEQs: Record<string, TrackEQSettings>;
+  trackFXs: Record<string, TrackFXSettings>;
   onPlay: (index: number) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onDownload: (id: string) => void;
   onSelect: (index: number) => void;
   onEQChange: (trackId: string, eq: TrackEQSettings) => void;
+  onFXChange: (trackId: string, fx: TrackFXSettings) => void;
 }
 
 function formatDuration(seconds: number): string {
