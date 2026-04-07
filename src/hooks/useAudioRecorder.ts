@@ -319,7 +319,7 @@ export function useAudioRecorder() {
     mergeGain.gain.value = 1;
 
     // === Reverb (parallel) ===
-    const convolver = ctx.createConvolverNode();
+    const convolver = ctx.createConvolver();
     convolver.buffer = createReverbImpulse(ctx, fx.reverbDecay);
     const reverbGain = ctx.createGain();
     reverbGain.gain.value = fx.reverbMix / 100;
