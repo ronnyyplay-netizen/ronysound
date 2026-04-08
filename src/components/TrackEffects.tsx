@@ -1,5 +1,8 @@
 import { useState } from 'react';
 import { Slider } from '@/components/ui/slider';
+import AISuggestButton from './AISuggestButton';
+import SavePresetButton from './SavePresetButton';
+import type { TrackEQSettings } from './TrackList';
 
 export interface TrackFXSettings {
   reverbMix: number;
@@ -37,38 +40,32 @@ export interface VoicePreset {
 
 export const voicePresets: VoicePreset[] = [
   {
-    name: 'Voz Pop',
-    emoji: '🎶',
+    name: 'Voz Pop', emoji: '🎶',
     fx: { compThreshold: -20, compRatio: 4, compAttack: 0.005, compRelease: 0.15, presence: 4, warmth: 2, deEsser: 45, breathControl: 30, reverbMix: 18, reverbDecay: 1.2, chorusMix: 8, chorusRate: 1.2, chorusDepth: 4 },
     eq: { bass: 1, mid: 2, treble: 3, volume: 0 },
   },
   {
-    name: 'Voz Rock',
-    emoji: '🎸',
+    name: 'Voz Rock', emoji: '🎸',
     fx: { compThreshold: -18, compRatio: 6, compAttack: 0.003, compRelease: 0.1, presence: 6, warmth: 5, deEsser: 30, breathControl: 20, reverbMix: 12, reverbDecay: 0.8, delayMix: 8, delayTime: 0.12, delayFeedback: 20 },
     eq: { bass: 3, mid: 4, treble: 2, volume: 1 },
   },
   {
-    name: 'Podcast',
-    emoji: '🎙️',
+    name: 'Podcast', emoji: '🎙️',
     fx: { compThreshold: -22, compRatio: 5, compAttack: 0.008, compRelease: 0.2, presence: 3, warmth: 4, deEsser: 60, breathControl: 55, reverbMix: 0, chorusMix: 0, delayMix: 0 },
     eq: { bass: -2, mid: 3, treble: 1, volume: 2 },
   },
   {
-    name: 'Rádio',
-    emoji: '📻',
+    name: 'Rádio', emoji: '📻',
     fx: { compThreshold: -16, compRatio: 8, compAttack: 0.002, compRelease: 0.08, presence: 5, warmth: 3, deEsser: 50, breathControl: 40, reverbMix: 5, reverbDecay: 0.5 },
     eq: { bass: -3, mid: 5, treble: 4, volume: 3 },
   },
   {
-    name: 'Balada',
-    emoji: '🌙',
+    name: 'Balada', emoji: '🌙',
     fx: { compThreshold: -26, compRatio: 3, compAttack: 0.015, compRelease: 0.3, presence: 2, warmth: 6, deEsser: 35, breathControl: 15, reverbMix: 35, reverbDecay: 2.5, delayMix: 12, delayTime: 0.25, delayFeedback: 25, chorusMix: 15, chorusRate: 0.8, chorusDepth: 6 },
     eq: { bass: 2, mid: 1, treble: 2, volume: -1 },
   },
   {
-    name: 'Gospel',
-    emoji: '✝️',
+    name: 'Gospel', emoji: '✝️',
     fx: { compThreshold: -22, compRatio: 4, compAttack: 0.01, compRelease: 0.2, presence: 5, warmth: 3, deEsser: 40, breathControl: 25, reverbMix: 30, reverbDecay: 2.0, delayMix: 5, delayTime: 0.18, delayFeedback: 15 },
     eq: { bass: 1, mid: 3, treble: 3, volume: 0 },
   },
@@ -77,8 +74,10 @@ export const voicePresets: VoicePreset[] = [
 interface TrackEffectsProps {
   trackId: string;
   fx: TrackFXSettings;
+  eq: TrackEQSettings;
   onChange: (trackId: string, fx: TrackFXSettings) => void;
   onApplyPreset?: (trackId: string, preset: VoicePreset) => void;
+  onApplyAI?: (trackId: string, eq: TrackEQSettings, fx: TrackFXSettings) => void;
 }
 
 const FXSlider = ({ label, value, onChange, min, max, step = 0.1, unit = '' }: {
@@ -93,7 +92,7 @@ const FXSlider = ({ label, value, onChange, min, max, step = 0.1, unit = '' }: {
   </div>
 );
 
-const TrackEffects = ({ trackId, fx, onChange, onApplyPreset }: TrackEffectsProps) => {
+const TrackEffects = ({ trackId, fx, eq, onChange, onApplyPreset, onApplyAI }: TrackEffectsProps) => {
   const [section, setSection] = useState<string | null>(null);
 
   const update = (key: keyof TrackFXSettings, value: number) => {
@@ -116,6 +115,8 @@ const TrackEffects = ({ trackId, fx, onChange, onApplyPreset }: TrackEffectsProp
               {p.emoji} {p.name}
             </button>
           ))}
+          <AISuggestButton trackId={trackId} currentEQ={eq} currentFX={fx} onApply={(id, newEQ, newFX) => onApplyAI?.(id, newEQ, newFX)} />
+          <SavePresetButton trackId={trackId} currentEQ={eq} currentFX={fx} onLoadPreset={(id, loadEQ, loadFX) => onApplyAI?.(id, loadEQ, loadFX)} />
         </div>
       ),
     },

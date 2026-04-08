@@ -27,6 +27,7 @@ interface TrackListProps {
   onEQChange: (trackId: string, eq: TrackEQSettings) => void;
   onFXChange: (trackId: string, fx: TrackFXSettings) => void;
   onApplyPreset?: (trackId: string, preset: import('./TrackEffects').VoicePreset) => void;
+  onApplyAI?: (trackId: string, eq: TrackEQSettings, fx: TrackFXSettings) => void;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
@@ -39,7 +40,7 @@ function formatDuration(seconds: number): string {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange, onApplyPreset, canUndo, canRedo, onUndo, onRedo }: TrackListProps) => {
+const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, onPlay, onDelete, onRename, onDownload, onSelect, onEQChange, onFXChange, onApplyPreset, onApplyAI, canUndo, canRedo, onUndo, onRedo }: TrackListProps) => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
 
@@ -148,8 +149,10 @@ const TrackList = ({ tracks, currentTrackIndex, isPlaying, trackEQs, trackFXs, o
                     <TrackEffects
                       trackId={track.id}
                       fx={trackFXs[track.id] ?? defaultFX}
+                      eq={trackEQs[track.id] ?? defaultEQ}
                       onChange={onFXChange}
                       onApplyPreset={onApplyPreset}
+                      onApplyAI={onApplyAI}
                     />
                   </>
                 )}
