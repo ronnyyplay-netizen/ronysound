@@ -22,34 +22,12 @@ interface MixState {
 
 const Index = () => {
   const {
-    isRecording,
-    recordingTime,
-    tracks,
-    currentTrackIndex,
-    isPlaying,
-    playbackTime,
-    analyserData,
-    inputLevel,
-    inputSource,
-    isMonitoring,
-    noiseReduction,
-    playbackAnalyser,
-    startRecording,
-    stopRecording,
-    playTrack,
-    pausePlayback,
-    stopPlayback,
-    deleteTrack,
-    renameTrack,
-    downloadTrack,
-    importAudioFile,
-    setCurrentTrackIndex,
-    addTrack,
-    setInputSource,
-    toggleMonitoring,
-    setNoiseReduction,
-    updatePlaybackEQ,
-    updatePlaybackFX,
+    isRecording, recordingTime, tracks, currentTrackIndex, isPlaying, playbackTime,
+    analyserData, inputLevel, inputSource, isMonitoring, noiseReduction, playbackAnalyser,
+    startRecording, stopRecording, playTrack, pausePlayback, stopPlayback,
+    deleteTrack, renameTrack, downloadTrack, importAudioFile, setCurrentTrackIndex,
+    addTrack, setInputSource, toggleMonitoring, setNoiseReduction,
+    updatePlaybackEQ, updatePlaybackFX,
   } = useAudioRecorder();
 
   const { state: mixState, set: setMixState, undo, redo, canUndo, canRedo } = useUndoRedo<MixState>({ eqs: {}, fxs: {} });
@@ -72,20 +50,23 @@ const Index = () => {
     }));
   }, [setMixState]);
 
+  const handleApplyAI = useCallback((trackId: string, eq: TrackEQSettings, fx: TrackFXSettings) => {
+    setMixState(prev => ({
+      eqs: { ...prev.eqs, [trackId]: eq },
+      fxs: { ...prev.fxs, [trackId]: fx },
+    }));
+  }, [setMixState]);
+
   const currentTrack = currentTrackIndex !== null ? tracks[currentTrackIndex] : null;
   const currentEQ = currentTrack ? (trackEQs[currentTrack.id] ?? { bass: 0, mid: 0, treble: 0, volume: 0 }) : { bass: 0, mid: 0, treble: 0, volume: 0 };
   const currentFX = currentTrack ? (trackFXs[currentTrack.id] ?? defaultFX) : defaultFX;
 
   useEffect(() => {
-    if (isPlaying && currentTrack) {
-      updatePlaybackEQ(currentEQ);
-    }
+    if (isPlaying && currentTrack) updatePlaybackEQ(currentEQ);
   }, [currentEQ, isPlaying, currentTrack, updatePlaybackEQ]);
 
   useEffect(() => {
-    if (isPlaying && currentTrack) {
-      updatePlaybackFX(currentFX);
-    }
+    if (isPlaying && currentTrack) updatePlaybackFX(currentFX);
   }, [currentFX, isPlaying, currentTrack, updatePlaybackFX]);
 
   const handlePlay = useCallback((index?: number) => {
@@ -97,9 +78,7 @@ const Index = () => {
     playTrack(idx, eq, fx);
   }, [currentTrackIndex, tracks, trackEQs, trackFXs, playTrack]);
 
-  const playbackProgress = currentTrack && currentTrack.duration > 0
-    ? playbackTime / currentTrack.duration
-    : 0;
+  const playbackProgress = currentTrack && currentTrack.duration > 0 ? playbackTime / currentTrack.duration : 0;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -139,10 +118,7 @@ const Index = () => {
           analyserData={analyserData}
           playbackProgress={playbackProgress}
         />
-        <SpectrumAnalyzer
-          analyserNode={playbackAnalyser}
-          isActive={isPlaying}
-        />
+        <SpectrumAnalyzer analyserNode={playbackAnalyser} isActive={isPlaying} />
         <InputMeter level={inputLevel} isRecording={isRecording} />
       </div>
       <div className="h-80 border-t border-border bg-card overflow-hidden flex flex-col">
@@ -166,6 +142,7 @@ const Index = () => {
               onEQChange={handleEQChange}
               onFXChange={handleFXChange}
               onApplyPreset={handleApplyPreset}
+              onApplyAI={handleApplyAI}
               canUndo={canUndo}
               canRedo={canRedo}
               onUndo={undo}
@@ -173,10 +150,7 @@ const Index = () => {
             />
           </TabsContent>
           <TabsContent value="stems" className="flex-1 overflow-y-auto m-0">
-            <StemSeparator
-              track={currentTrack}
-              onAddStemAsTrack={addTrack}
-            />
+            <StemSeparator track={currentTrack} onAddStemAsTrack={addTrack} />
           </TabsContent>
         </Tabs>
       </div>

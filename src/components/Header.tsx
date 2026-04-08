@@ -1,6 +1,7 @@
 import { Music, Upload } from 'lucide-react';
 import { useRef } from 'react';
 import RecordingSettings from './RecordingSettings';
+import AuthDialog from './AuthDialog';
 import type { AudioInputSource } from '@/hooks/useAudioRecorder';
 
 interface HeaderProps {
@@ -67,6 +68,8 @@ const Header = ({
           className="hidden"
           onChange={handleFileChange}
         />
+        <div className="w-px h-6 bg-border" />
+        <AuthDialog />
       </div>
     </header>
   );
